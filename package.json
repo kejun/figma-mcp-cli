@@ -7,7 +7,7 @@
     "figma-mcp": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && chmod +x dist/index.js",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts"
   },
