@@ -62,7 +62,7 @@ async function main(): Promise<void> {
   program
     .name('figma-mcp')
     .description('将本地 HTML 设计发送到 Figma')
-    .option('-t, --token <token>', 'Figma Personal Access Token')
+    .option('-t, --token [token]', 'Figma Personal Access Token')
     .option('-f, --file <path>', 'HTML 文件路径', './index.html')
     .option('-p, --port <number>', '本地服务器端口', (value) => Number.parseInt(value, 10), 8080)
     .option('--team-id <id>', 'Figma 团队 ID')
@@ -73,7 +73,7 @@ async function main(): Promise<void> {
     .parse(process.argv);
 
   const options = program.opts<CLIOptions>();
-  const token = options.token ?? process.env.FIGMA_ACCESS_TOKEN;
+  const token = (typeof options.token === 'string' ? options.token : undefined) ?? process.env.FIGMA_ACCESS_TOKEN;
 
   if (!token) {
     throw new Error('缺少 Figma token，请使用 --token 或设置 FIGMA_ACCESS_TOKEN');
