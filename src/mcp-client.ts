@@ -1,18 +1,18 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { CaptureResponse, FigmaConfig } from './types.js';
 
 export class FigmaMCPClient {
   private client: Client;
-  private transport: StdioClientTransport;
+  private transport: StreamableHTTPClientTransport;
 
   constructor(accessToken: string) {
-    this.transport = new StdioClientTransport({
-      command: 'npx',
-      args: ['-y', '@figma/mcp-server'],
-      env: {
-        ...process.env,
-        FIGMA_ACCESS_TOKEN: accessToken,
+    this.transport = new StreamableHTTPClientTransport(new URL('https://mcp.figma.com/mcp'), {
+      requestInit: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'X-Figma-Token': accessToken,
+        },
       },
     });
 
