@@ -12,15 +12,25 @@ class InMemoryOAuthClientProvider implements OAuthClientProvider {
   private _tokens?: ReturnType<OAuthClientProvider['tokens']>;
   private _codeVerifier?: string;
 
-  constructor(redirectUrl: string, onRedirect: (authorizationUrl: URL) => void) {
+  constructor(
+    redirectUrl: string,
+    onRedirect: (authorizationUrl: URL) => void,
+    oauthClientInfo?: { clientId?: string; clientSecret?: string },
+  ) {
     this._redirectUrl = redirectUrl;
     this._clientMetadata = {
       client_name: 'figma-mcp-cli',
       redirect_uris: [redirectUrl],
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
-      token_endpoint_auth_method: 'none',
+      token_endpoint_auth_method: oauthClientInfo?.clientSecret ? 'client_secret_basic' : 'none',
     };
+    if (oauthClientInfo?.clientId) {
+      this._clientInformation = {
+        client_id: oauthClientInfo.clientId,
+        ...(oauthClientInfo.clientSecret ? { client_secret: oauthClientInfo.clientSecret } : {}),
+      };
+    }
     this._onRedirect = onRedirect;
   }
 
@@ -73,13 +83,20 @@ export class FigmaMCPClient {
   private readonly callbackUrl: string;
   private readonly authProvider: InMemoryOAuthClientProvider;
 
-  constructor(_accessToken: string, callbackPort = 38421) {
-    this.callbackPort = callbackPort;
+  constructor(
+    _accessToken: string,
+    options: { callbackPort?: number; oauthClientId?: string; oauthClientSecret?: string } = {},
+  ) {
+    this.callbackPort = options.callbackPort ?? 38421;
     this.callbackUrl = `http://127.0.0.1:${this.callbackPort}/callback`;
-    this.authProvider = new InMemoryOAuthClientProvider(this.callbackUrl, (authorizationUrl) => {
-      console.log('\n🔐 需要进行 MCP 认证，正在打开浏览器...');
-      void open(authorizationUrl.toString());
-    });
+    this.authProvider = new InMemoryOAuthClientProvider(
+      this.callbackUrl,
+      (authorizationUrl) => {
+        console.log('\n🔐 需要进行 MCP 认证，正在打开浏览器...');
+        void open(authorizationUrl.toString());
+      },
+      { clientId: options.oauthClientId, clientSecret: options.oauthClientSecret },
+    );
 
     this.transport = new StreamableHTTPClientTransport(new URL('https://mcp.figma.com/mcp'), {
       authProvider: this.authProvider,
@@ -98,10 +115,24 @@ export class FigmaMCPClient {
       }
 
       const authorizationCode = await this.waitForOAuthCallback();
-      await this.transport.finishAuth(authorizationCode);
+      try {
+        await this.transport.finishAuth(authorizationCode);
+      } catch (authError) {
+        throw this.formatOAuthError(authError);
+      }
       await this.client.connect(this.transport);
       console.log('✓ Figma MCP 服务器已连接');
     }
+  }
+
+  private formatOAuthError(error: unknown): Error {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes('HTTP 403') || message.includes('Forbidden')) {
+      return new Error(
+        'OAuth 令牌交换被拒绝（HTTP 403）。请确认 Figma OAuth App 已在 https://www.figma.com/developers/apps 重新发布并配置最新粒度 scopes；如为机密应用，请设置 FIGMA_OAUTH_CLIENT_ID 和 FIGMA_OAUTH_CLIENT_SECRET。',
+      );
+    }
+    return error instanceof Error ? error : new Error(message);
   }
 
   async listTools(): Promise<string[]> {

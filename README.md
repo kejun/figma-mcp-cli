@@ -20,10 +20,14 @@ figma-mcp --token YOUR_FIGMA_TOKEN --file ./index.html
 
 ```bash
 export FIGMA_ACCESS_TOKEN=YOUR_FIGMA_TOKEN
+# 如需使用 2025.11 后重新发布的 OAuth App（推荐）
+export FIGMA_OAUTH_CLIENT_ID=YOUR_FIGMA_CLIENT_ID
+export FIGMA_OAUTH_CLIENT_SECRET=YOUR_FIGMA_CLIENT_SECRET
 figma-mcp --file ./index.html
 ```
 
 > 首次连接远程 MCP 服务时，即使已提供 Figma token，也可能需要额外 OAuth 认证。CLI 会自动打开浏览器完成认证。
+> 如遇到 OAuth 403，请在 Figma My Apps 重新发布应用并启用最新粒度 scopes。
 
 ## 常用参数
 
