@@ -12,9 +12,9 @@ export class HTMLInjector {
     this.originalContent = await readFile(this.filePath, 'utf-8');
   }
 
-  async injectScript(): Promise<void> {
+  async injectScript(scriptUrl: string): Promise<void> {
     let content = await readFile(this.filePath, 'utf-8');
-    const scriptTag = '<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>';
+    const scriptTag = `<script src="${scriptUrl}" async></script>`;
 
     if (!content.includes('capture.js')) {
       content = content.includes('</head>')

@@ -1,5 +1,5 @@
 export interface FigmaConfig {
-  accessToken: string;
+  accessToken?: string;
   teamId?: string;
   outputMode: 'newFile' | 'existingFile';
   fileName?: string;
