@@ -74,9 +74,14 @@ async function main(): Promise<void> {
 
   const options = program.opts<CLIOptions>();
   const token = (typeof options.token === 'string' ? options.token : undefined) ?? process.env.FIGMA_ACCESS_TOKEN;
+  const oauthClientId = process.env.FIGMA_OAUTH_CLIENT_ID;
+  const oauthClientSecret = process.env.FIGMA_OAUTH_CLIENT_SECRET;
 
   if (!token) {
     throw new Error('缺少 Figma token，请使用 --token 或设置 FIGMA_ACCESS_TOKEN');
+  }
+  if (oauthClientSecret && !oauthClientId) {
+    throw new Error('设置 FIGMA_OAUTH_CLIENT_SECRET 时必须同时设置 FIGMA_OAUTH_CLIENT_ID');
   }
 
   const htmlPath = resolve(options.file);
@@ -85,7 +90,7 @@ async function main(): Promise<void> {
   console.log('🎨 Figma MCP CLI - HTML to Design\n');
   console.log(`📁 HTML 文件：${htmlPath}`);
 
-  const mcpClient = new FigmaMCPClient(token);
+  const mcpClient = new FigmaMCPClient(token, { oauthClientId, oauthClientSecret });
   const server = new LocalServer({
     port: options.port,
     directory: dirname(htmlPath),
