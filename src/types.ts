@@ -3,6 +3,7 @@ export interface FigmaConfig {
   teamId?: string;
   outputMode: 'newFile' | 'existingFile';
   fileName?: string;
+  url?: string;
 }
 
 export interface CaptureResponse {

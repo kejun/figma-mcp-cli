@@ -31,6 +31,7 @@ export class FigmaMCPClient {
 
     if (config.fileName) args.fileName = config.fileName;
     if (config.teamId) args.planKey = `team::${config.teamId}`;
+    if (config.url) args.url = config.url;
     if (captureId) args.captureId = captureId;
 
     const result = await this.client.callTool({
@@ -38,11 +39,16 @@ export class FigmaMCPClient {
       arguments: args,
     });
 
+    if (result.isError) {
+      const errorContent = result.content as Array<{ type: string; text?: string }>;
+      const errorText = errorContent.find((c) => c.type === 'text')?.text ?? 'Unknown error';
+      throw new Error(`MCP tool error: ${errorText}`);
+    }
+
     const content = result.content as Array<{ type: string; text?: string }>;
     const text = content.find((c) => c.type === 'text')?.text ?? '';
 
-    const captureIdMatch = text.match(/capture ID[:\s]+`?([a-f0-9-]+)`?/i);
-    const urlMatch = text.match(/https:\/\/www\.figma\.com[^\s]*/i);
+    const urlMatch = text.match(/https:\/\/www\.figma\.com[^\s)>]*/i);
 
     if (captureId) {
       if (text.includes('completed') || urlMatch) {
@@ -67,10 +73,49 @@ export class FigmaMCPClient {
       };
     }
 
+    const extractedId = this.extractCaptureId(text);
+
+    if (!extractedId) {
+      console.error('⚠ MCP 响应内容:', text);
+    }
+
     return {
-      captureId: captureIdMatch?.[1] ?? '',
+      captureId: extractedId,
       status: 'pending',
     };
+  }
+
+  private extractCaptureId(text: string): string {
+    // Try JSON parsing first
+    try {
+      const json = JSON.parse(text) as Record<string, unknown>;
+      if (typeof json.captureId === 'string' && json.captureId) {
+        return json.captureId;
+      }
+      if (typeof json.capture_id === 'string' && json.capture_id) {
+        return json.capture_id;
+      }
+    } catch {
+      // Not JSON, try regex patterns
+    }
+
+    // Try multiple regex patterns for different response formats
+    const patterns = [
+      /capture\s*id[:\s]+`?([a-f0-9-]+)`?/i,
+      /capture[_-]id[:\s]+`?([a-f0-9-]+)`?/i,
+      /"captureId"\s*:\s*"([^"]+)"/,
+      /"capture_id"\s*:\s*"([^"]+)"/,
+      /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match?.[1]) {
+        return match[1];
+      }
+    }
+
+    return '';
   }
 
   getCaptureScriptUrl(): string {

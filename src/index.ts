@@ -100,22 +100,23 @@ async function main(): Promise<void> {
     await injector.injectScript(mcpClient.getCaptureScriptUrl());
 
     console.log('\n📡 请求 Figma 设计生成...');
+    const fileName = htmlPath.split('/').pop();
     const figmaConfig: FigmaConfig = {
       teamId: options.teamId,
       outputMode: 'newFile',
       fileName: options.fileName,
+      url: `${server.getUrl()}/${fileName}`,
     };
 
     const captureResponse = await mcpClient.generateFigmaDesign(figmaConfig);
     const captureId = captureResponse.captureId;
 
     if (!captureId) {
-      throw new Error('未能获取 captureId');
+      throw new Error('未能获取 captureId，请检查 MCP 服务器连接和工具响应');
     }
 
     console.log(`✓ Capture ID: ${captureId}`);
 
-    const fileName = htmlPath.split('/').pop();
     const captureEndpoint = encodeURIComponent(mcpClient.getCaptureEndpoint(captureId));
     const captureUrl = `${server.getUrl()}/${fileName}#figmacapture=${captureId}&figmaendpoint=${captureEndpoint}`;
 
