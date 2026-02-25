@@ -26,6 +26,13 @@ export FIGMA_OAUTH_CLIENT_SECRET=YOUR_FIGMA_CLIENT_SECRET
 figma-mcp --file ./index.html
 ```
 
+必须/可选配置说明：
+
+- **必须**：`FIGMA_ACCESS_TOKEN`（或通过 `--token` 传入）
+- **可选**：`FIGMA_OAUTH_CLIENT_ID`、`FIGMA_OAUTH_CLIENT_SECRET`
+  - 机密 OAuth 应用建议同时设置这两个变量
+  - `FIGMA_OAUTH_CLIENT_SECRET` 不能单独设置，必须和 `FIGMA_OAUTH_CLIENT_ID` 成对出现
+
 > 首次连接远程 MCP 服务时，即使已提供 Figma token，也可能需要额外 OAuth 认证。CLI 会自动打开浏览器完成认证。
 > 如遇到 OAuth 403，请在 Figma My Apps 重新发布应用并启用最新粒度 scopes。
 

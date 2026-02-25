@@ -111,7 +111,7 @@ export class FigmaMCPClient {
       console.log('✓ Figma MCP 服务器已连接');
     } catch (error) {
       if (!(error instanceof UnauthorizedError)) {
-        throw error;
+        throw this.formatOAuthError(error);
       }
 
       const authorizationCode = await this.waitForOAuthCallback();
