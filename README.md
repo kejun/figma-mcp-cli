@@ -23,6 +23,8 @@ export FIGMA_ACCESS_TOKEN=YOUR_FIGMA_TOKEN
 figma-mcp --file ./index.html
 ```
 
+> 首次连接远程 MCP 服务时，即使已提供 Figma token，也可能需要额外 OAuth 认证。CLI 会自动打开浏览器完成认证。
+
 ## 常用参数
 
 - `--token`: Figma Personal Access Token（可选，未传时读取 `FIGMA_ACCESS_TOKEN`）
