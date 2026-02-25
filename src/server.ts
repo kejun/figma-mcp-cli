@@ -27,7 +27,8 @@ export class LocalServer {
 
   private async handleRequest(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse): Promise<void> {
     try {
-      const requestPath = req.url === '/' ? '/index.html' : req.url ?? '/index.html';
+      const rawRequestPath = req.url === '/' ? '/index.html' : req.url ?? '/index.html';
+      const requestPath = decodeURIComponent(rawRequestPath);
       const filePath = resolve(this.directory, `.${requestPath}`);
 
       if (!filePath.startsWith(this.directory)) {
@@ -49,7 +50,18 @@ export class LocalServer {
 
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content);
-    } catch {
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error &&
+        'code' in error &&
+        (error.code === 'ENOENT' || error.code === 'ENOTDIR')
+      ) {
+        res.writeHead(404);
+        res.end('Not Found');
+        return;
+      }
+
       res.writeHead(500);
       res.end('Internal Server Error');
     }
